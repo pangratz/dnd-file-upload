@@ -1,0 +1,8 @@
+upload dropped file(s) from the filesystem into the browser via ajax to your server. this project uses the new drag and drop html5 api OR if not supported, the feature of some browsers (safari, chrome, chromium), to drop files onto the <input type="file" /> tag.
+
+currently the following browsers work with this plugin and hence a multiple file upload via drag and drop is possible with:
+
+* Firefox 3.6
+* Safari 4
+* Chrome 5
+* Chromium 4
