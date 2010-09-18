@@ -12,6 +12,7 @@
 
 		log("adding dnd-file-upload functionalities to element with id: " + id);
 
+		// hack for safari on windows: due to not supported drop/dragenter/dragover events we have to create a invisible <input type="file" /> tag instead
 		if ($.client.browser == "Safari" && $.client.os == "Windows") {
 			var fileInput = $("<input>");
 			fileInput.attr( {
