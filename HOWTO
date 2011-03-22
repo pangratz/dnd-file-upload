@@ -71,12 +71,16 @@ What you can do now is to register functions which are invoked, when specific ev
                 // new files have been dropped
             };
 
-            $.fn.dropzone.uploadStarted = function(fileIndex, file) {
+            $.fn.dropzone.uploadStarted = function(fileIndex, file, xhr) {
                 // upload of file with given index has started
+                //  (note, that in some cases started can be called after load.
+                //    check xhr.status for this case)
             };
 
-            $.fn.dropzone.uploadFinished = function(fileIndex, file, time) {
+            $.fn.dropzone.uploadFinished = function(fileIndex, file, time, xhr) {
                 // upload of file with given index has finished; upload took *time* mili seconds
+
+                // status if xhr.status
             };
 
             $.fn.dropzone.fileUploadProgressUpdated = function(fileIndex, file, newProgress) {

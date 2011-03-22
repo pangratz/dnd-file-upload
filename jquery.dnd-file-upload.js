@@ -53,11 +53,11 @@
 	};
 
 	// invoked when the upload for given file has been started
-	$.fn.dropzone.uploadStarted = function(fileIndex, file) {
+	$.fn.dropzone.uploadStarted = function(fileIndex, file, xhr) {
 	};
 
 	// invoked when the upload for given file has been finished
-	$.fn.dropzone.uploadFinished = function(fileIndex, file, time) {
+	$.fn.dropzone.uploadFinished = function(fileIndex, file, time, xhr) {
 	};
 
 	// invoked when the progress for given file has changed
@@ -115,7 +115,7 @@
 
 			// add listeners
 			upload.addEventListener("progress", progress, false);
-			upload.addEventListener("load", load, false);
+			upload.addEventListener("load", fnLoad(xhr), false);
 
 			xhr.open(opts.method, opts.url);
 			xhr.setRequestHeader("Cache-Control", "no-cache");
@@ -125,16 +125,18 @@
 			xhr.setRequestHeader("Content-Type", "multipart/form-data");
 			xhr.send(file);
 
-			$.fn.dropzone.uploadStarted(i, file);
+			$.fn.dropzone.uploadStarted(i, file, xhr);
 		}
 	}
 
-	function load(event) {
+        function fnLoad(xhr) {
+	  return function (event) {
 		var now = new Date().getTime();
 		var timeDiff = now - this.downloadStartTime;
-		$.fn.dropzone.uploadFinished(this.fileIndex, this.fileObj, timeDiff);
+		$.fn.dropzone.uploadFinished(this.fileIndex, this.fileObj, timeDiff, xhr);
 		log("finished loading of file " + this.fileIndex);
-	}
+	  }
+        }
 
 	function progress(event) {
 		if (event.lengthComputable) {
