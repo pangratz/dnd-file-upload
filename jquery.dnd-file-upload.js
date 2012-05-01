@@ -34,10 +34,15 @@
 			var jQueryDropzone = $("#" + id);
 			jQueryDropzone.bind("dragenter", dragenter);
 			jQueryDropzone.bind("dragover", dragover);
+			jQueryDropzone.bind("dragleave", dragleave);
 		}
 
 		return this;
 	};
+
+        $.fn.dropzone.extraParams = function(params) {
+	     opts.extraParams=params;
+        };
 
 	$.fn.dropzone.defaults = {
 		url : "",
@@ -53,11 +58,15 @@
 	};
 
 	// invoked when the upload for given file has been started
-	$.fn.dropzone.uploadStarted = function(fileIndex, file) {
+	$.fn.dropzone.uploadStarted = function(fileIndex, file, xhr) {
 	};
 
 	// invoked when the upload for given file has been finished
 	$.fn.dropzone.uploadFinished = function(fileIndex, file, time) {
+	};
+
+	// invoked during upload xhr request.
+	$.fn.dropzone.onReadyStateChange = function(xhr) {
 	};
 
 	// invoked when the progress for given file has changed
@@ -70,7 +79,12 @@
 			KBperSecond) {
 	};
 
+        $.fn.uploadInput = function() {
+             this.bind("change",change);
+        }
+
 	function dragenter(event) {
+                $(event.target).addClass('ui-state-hover');
 		event.stopPropagation();
 		event.preventDefault();
 		return false;
@@ -82,12 +96,18 @@
 		return false;
 	}
 
+        function dragleave(event) {
+                $(event.target).removeClass('ui-state-hover');
+		return false;
+        }
+
 	function drop(event) {
 		var dt = event.dataTransfer;
 		var files = dt.files;
 
 		event.preventDefault();
 		uploadFiles(files);
+                $(event.target).removeClass('ui-state-hover');
 
 		return false;
 	}
@@ -116,25 +136,64 @@
 			// add listeners
 			upload.addEventListener("progress", progress, false);
 			upload.addEventListener("load", load, false);
+                        xhr.onreadystatechange = function(event) {
+                           $.fn.dropzone.onReadyStateChange(xhr);
+                        };
+
+			$.fn.dropzone.uploadStarted(i, file, xhr);
 
 			xhr.open(opts.method, opts.url);
-			xhr.setRequestHeader("Cache-Control", "no-cache");
-			xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-			xhr.setRequestHeader("X-File-Name", file.fileName);
-			xhr.setRequestHeader("X-File-Size", file.fileSize);
-			xhr.setRequestHeader("Content-Type", "multipart/form-data");
-			xhr.send(file);
+                        if (typeof FormData !== 'undefined') {
+                          var formdata = new FormData();
+                          formdata.append('file',file);
+                          if (opts.extraParams!=undefined) {
+                            for(var key in opts.extraParams) {
+                                formdata.append(key,opts.extraParams[key]);
+                            }
+                          }
+                          xhr.send(formdata);
+                        } else {
+			  xhr.setRequestHeader("Cache-Control", "no-cache");
+			  xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                          var boundary = "AAAy------"+(new Date).getTime();
+                          xhr.setRequestHeader("Content-Type",
+                                  "multipart/form-data; boundary="+boundary);
+                          var data = "--" + boundary + "\r\n";
+                          if (opts.extraParams!=undefined) {
+                            for(var key in opts.extraParams) {
+                               data += "Content-Disposition: form-data; ";
+                               data += 'name="';
+                               data += key;
+                               data += ';"\r\n';
+                               data += '\r\n';
+                               data += opts.extraParams[key];
+                               data += '\r\n';
+                               data += "--"+boundary;
+                               data += '\r\n';
+                            }
+                          }
+                          data += "Content-Disposition: form-data; ";
+                          data += 'name="file"; ';
+                          data += 'filename="'+file.fileName+'";';
+                          data += "\r\n";
+                          data += "Content-Type: application/octet-stream";
+                          data += "\r\n";
+                          data += "\r\n";
+                          data += file.getAsBinary() + "\r\n";
+                          data += "--"+boundary+"--";
+                          xhr.sendAsBinary(data);
+                        }
 
-			$.fn.dropzone.uploadStarted(i, file);
 		}
 	}
 
-	function load(event) {
-		var now = new Date().getTime();
-		var timeDiff = now - this.downloadStartTime;
-		$.fn.dropzone.uploadFinished(this.fileIndex, this.fileObj, timeDiff);
-		log("finished loading of file " + this.fileIndex);
-	}
+        function load(event) {
+           var now = new Date().getTime();
+           var timeDiff = now - this.downloadStartTime;
+           $.fn.dropzone.uploadFinished(this.fileIndex, this.fileObj, timeDiff);
+           log("finished loading of file " + this.fileIndex);
+        }
+
 
 	function progress(event) {
 		if (event.lengthComputable) {
