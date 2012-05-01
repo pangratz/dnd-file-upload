@@ -118,13 +118,24 @@
 			upload.addEventListener("load", load, false);
 
 			xhr.open(opts.method, opts.url);
-			xhr.setRequestHeader("Cache-Control", "no-cache");
-			xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-			xhr.setRequestHeader("X-File-Name", file.fileName);
-			xhr.setRequestHeader("X-File-Size", file.fileSize);
-			xhr.setRequestHeader("Content-Type", "multipart/form-data");
-			xhr.send(file);
-
+			//Use native function(Chrome 5+ ,Safari 5+ and Firefox 4+), for dealing with multipart/form-data and boundray generation
+			if(FormData){
+				var formdata = new FormData(); //see https://developer.mozilla.org/En/XMLHttpRequest/Using_XMLHttpRequest#Using_FormData_objects
+				//'file' can be any string which you would like to associte with uploaded file even for example file.type eg:
+				//formdata.append(file.type, file);
+				//formdata.append(file.fileName, file);
+				formdata.append('file', file);
+				xhr.send(file);
+			}
+			else{
+				//TODO: Multipart boundary generation for other browsers, see http://demos.hacks.mozilla.org/openweb/imageUploader/js/extends/xhr.js
+				xhr.setRequestHeader("Cache-Control", "no-cache");
+				xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+				xhr.setRequestHeader("X-File-Name", file.fileName);
+				xhr.setRequestHeader("X-File-Size", file.fileSize);
+				xhr.setRequestHeader("Content-Type", "multipart/form-data");
+				xhr.send(file);
+			}
 			$.fn.dropzone.uploadStarted(i, file);
 		}
 	}
